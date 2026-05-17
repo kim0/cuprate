@@ -6,4 +6,4 @@ cd "$repo_root"
 guix_system="${1:-x86_64-linux}"
 guix time-machine -C "$script_dir/channels.scm" \
   -- shell --system="$guix_system" -m "$script_dir/manifest.scm" --container --pure --network -- \
-  "$script_dir/mk-distsrc"
+  bash "$script_dir/mk-distsrc"

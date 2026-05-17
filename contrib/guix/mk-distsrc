@@ -38,7 +38,7 @@ git archive --format=tar HEAD | tar -xf - -C "$work_dir/src"
   cd "$work_dir/src"
   mkdir -p .cargo
   cargo vendor --locked --versioned-dirs vendor > .cargo/config.toml
-  "$repo_root/contrib/guix/libexec/patch-randomx.sh" "$work_dir/src" >&2
+  bash "$repo_root/contrib/guix/libexec/patch-randomx.sh" "$work_dir/src" >&2
   cat > .cuprate-distsrc.json <<META
 {"package":"cuprated","version":"$version","git_commit":"$commit","source_date_epoch":$source_date_epoch}
 META

@@ -39,4 +39,4 @@ guix time-machine -C "$script_dir/channels.scm" \
     GUIX_ALLOW_COMMIT_MISMATCH="${GUIX_ALLOW_COMMIT_MISMATCH:-0}" \
     RANDOMX_ARCH="${RANDOMX_ARCH:-}" \
     RANDOMX_DARCH="${RANDOMX_DARCH:-default}" \
-    "$script_dir/libexec/build.sh"
+    bash "$script_dir/libexec/build.sh"

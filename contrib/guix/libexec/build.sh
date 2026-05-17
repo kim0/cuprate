@@ -47,7 +47,7 @@ rust_target="${GUIX_RUST_TARGET:-x86_64-unknown-linux-gnu}"
 
 cargo build --frozen --release --package cuprated --target "$rust_target"
 
-"$repo_root/contrib/guix/libexec/package.sh" "$version" "$rust_target" "$SOURCE_DATE_EPOCH" "$out_dir" "$src_dir"
+bash "$repo_root/contrib/guix/libexec/package.sh" "$version" "$rust_target" "$SOURCE_DATE_EPOCH" "$out_dir" "$src_dir"
 
 binary="$src_dir/target/${rust_target}/release/cuprated"
 if command -v ldd >/dev/null 2>&1; then
