@@ -57,6 +57,16 @@ export AS=as
 export LD=ld
 export RANLIB=ranlib
 export STRIP=strip
+# Force openssl-sys to use the system openssl provided by the manifest via
+# pkg-config rather than building it from source via openssl-src (which would
+# also need `make`, but is wasteful when we already ship openssl).
+export OPENSSL_NO_VENDOR=1
+# Some -sys crates use $GUIX_ENVIRONMENT to find headers/libs when pkg-config
+# is not available; provide explicit hints.
+if [[ -n "${GUIX_ENVIRONMENT:-}" ]]; then
+  export OPENSSL_DIR="$GUIX_ENVIRONMENT"
+  export PKG_CONFIG_PATH="$GUIX_ENVIRONMENT/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+fi
 
 rust_target="${GUIX_RUST_TARGET:-x86_64-unknown-linux-gnu}"
 
