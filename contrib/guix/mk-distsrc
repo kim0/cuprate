@@ -6,8 +6,16 @@ cd "$repo_root"
 export LC_ALL=C
 export TZ=UTC
 
+# Refresh the stat cache first: guix shell --container can serve files with
+# stat metadata that differs from what was indexed on the host, which makes
+# `git diff-index --quiet` report dirty without an actual content diff.
+git update-index -q --refresh >/dev/null 2>&1 || true
 if ! git diff-index --quiet HEAD --; then
   echo "working tree is dirty; commit changes before creating distsrc" >&2
+  echo "--- git status --porcelain ---" >&2
+  git status --porcelain >&2
+  echo "--- git diff-index --name-only HEAD ---" >&2
+  git diff-index --name-only HEAD -- >&2
   exit 1
 fi
 
