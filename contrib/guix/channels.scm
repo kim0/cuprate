@@ -4,4 +4,5 @@
   (url "https://git.savannah.gnu.org/git/guix.git")
   (branch "master")
   ;; Commit pin should be updated intentionally during maintenance.
-  (commit "2f4f5d74fbe53b8c7a1fa638f76520ccf4fa7a20")))
+  ;; Pinned to the v1.5.0 tag commit.
+  (commit "230aa373f315f247852ee07dff34146e9b480aec")))

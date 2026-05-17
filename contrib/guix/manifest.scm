@@ -10,7 +10,7 @@
   "perl"
   "python"
   "rust"
-  "rust-cargo"
+  "rust:cargo"
   "gzip"
   "tar"
   "findutils"
