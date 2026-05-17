@@ -45,6 +45,18 @@ export RANDOMX_DARCH="${RANDOMX_DARCH:-default}"
 export RUSTFLAGS="--remap-path-prefix=$src_dir=/cuprate -C codegen-units=1"
 export CFLAGS="-ffile-prefix-map=$src_dir=/cuprate"
 export CXXFLAGS="-ffile-prefix-map=$src_dir=/cuprate"
+# Guix's gcc-toolchain profile only provides `gcc`/`g++`, not the legacy `cc`
+# alias; cc-rs (used by -sys crates such as libsqlite3-sys, openssl-sys,
+# randomx-rs, ring, etc.) defaults to `cc` and fails with
+#   ToolNotFound: failed to find tool "cc": No such file or directory
+# Pointing CC/CXX/AR/AS at the actual binaries fixes every -sys crate.
+export CC=gcc
+export CXX=g++
+export AR=ar
+export AS=as
+export LD=ld
+export RANLIB=ranlib
+export STRIP=strip
 
 rust_target="${GUIX_RUST_TARGET:-x86_64-unknown-linux-gnu}"
 
