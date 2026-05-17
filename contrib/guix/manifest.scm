@@ -5,7 +5,7 @@
   "git"
   "gcc-toolchain"
   "cmake"
-  "gnu-make"
+  "make"
   "pkg-config"
   "openssl"
   "perl"
