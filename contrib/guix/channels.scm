@@ -4,8 +4,10 @@
   (url "https://git.savannah.gnu.org/git/guix.git")
   (branch "master")
   ;; Commit pin should be updated intentionally during maintenance.
-  ;; Pinned to the v1.5.0 tag commit.
-  (commit "230aa373f315f247852ee07dff34146e9b480aec")
+  ;; v1.5.0 (230aa373f3) only ships rust up to 1.88; cuprate's workspace
+  ;; deps (fjall, lsm-tree, typed-index-collections, ...) need up to
+  ;; rustc 1.91 today, so pin to a recent master that ships rust 1.93.
+  (commit "7041be9c117cbae2a5238bb22a0ff93ef11ca91a")
   ;; Guix v1.5.0 requires every channel to carry an `introduction` with the
   ;; commit + OpenPGP fingerprint that started the chain of trust; without
   ;; this `guix time-machine` aborts with "channel 'guix' lacks an
