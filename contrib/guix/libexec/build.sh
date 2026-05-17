@@ -44,7 +44,13 @@ export RANDOMX_ARCH="${RANDOMX_ARCH:-}"
 export RANDOMX_DARCH="${RANDOMX_DARCH:-default}"
 export RUSTFLAGS="--remap-path-prefix=$src_dir=/cuprate -C codegen-units=1"
 export CFLAGS="-ffile-prefix-map=$src_dir=/cuprate"
-export CXXFLAGS="-ffile-prefix-map=$src_dir=/cuprate"
+# libstdc++ in Guix's gcc-15.2 toolchain ships with _GLIBCXX_HAVE_FENV_H and
+# _GLIBCXX_USE_C99_FENV undefined (c++config.h emits `/* #undef ... */` for
+# both), so <cfenv> doesn't pull in glibc's fenv.h and std::fesetround / the
+# global ::fesetround are both absent. Force-enable them so RandomX (and any
+# other C++ caller of <cfenv>) builds. This is a libstdc++ packaging gap;
+# defining these is consistent with what every other Linux distribution does.
+export CXXFLAGS="-ffile-prefix-map=$src_dir=/cuprate -D_GLIBCXX_HAVE_FENV_H=1 -D_GLIBCXX_USE_C99_FENV=1"
 # Guix's gcc-toolchain profile only provides `gcc`/`g++`, not the legacy `cc`
 # alias; cc-rs (used by -sys crates such as libsqlite3-sys, openssl-sys,
 # randomx-rs, ring, etc.) defaults to `cc` and fails with
