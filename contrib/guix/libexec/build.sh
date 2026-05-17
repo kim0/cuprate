@@ -18,7 +18,10 @@ build_root="$repo_root/target/guix-build-src"
 export CARGO_HOME="$build_root/cargo-home"
 rm -rf "$build_root"
 mkdir -p "$build_root/src" "$CARGO_HOME"
-tar -xf "$dist_src" -C "$build_root/src"
+# See mk-distsrc: guix shell --container runs as a mapped non-root user that
+# cannot honor the archive's stored uid/gid; pass --no-same-owner so tar
+# accepts the unprivileged extraction.
+tar -xf "$dist_src" --no-same-owner --no-same-permissions -C "$build_root/src"
 
 src_dir="$build_root/src"
 cd "$src_dir"
