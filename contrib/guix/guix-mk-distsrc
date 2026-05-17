@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(git -C "$script_dir/../.." rev-parse --show-toplevel)"
+cd "$repo_root"
+guix_system="${1:-x86_64-linux}"
+guix time-machine -C "$script_dir/channels.scm" \
+  -- shell --system="$guix_system" -m "$script_dir/manifest.scm" --container --pure --network -- \
+  "$script_dir/mk-distsrc"

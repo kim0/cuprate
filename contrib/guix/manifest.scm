@@ -1,0 +1,18 @@
+(specifications->manifest
+ (list
+  "bash"
+  "coreutils"
+  "git"
+  "gcc-toolchain"
+  "cmake"
+  "pkg-config"
+  "openssl"
+  "perl"
+  "python"
+  "rust"
+  "rust-cargo"
+  "gzip"
+  "tar"
+  "findutils"
+  "gawk"
+  "nss-certs"))

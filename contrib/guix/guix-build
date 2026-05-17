@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(git -C "$script_dir/../.." rev-parse --show-toplevel)"
+cd "$repo_root"
+
+guix_system="x86_64-linux"
+rust_target="x86_64-unknown-linux-gnu"
+package_name="cuprated"
+distsrc=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --guix-system) guix_system="$2"; shift 2 ;;
+    --target) rust_target="$2"; shift 2 ;;
+    --distsrc) distsrc="$2"; shift 2 ;;
+    --package) package_name="$2"; shift 2 ;;
+    *) echo "unknown argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+[[ "$package_name" == "cuprated" ]] || { echo "only --package cuprated is supported" >&2; exit 1; }
+[[ -n "$distsrc" ]] || { echo "missing required --distsrc <path-to-cuprate-*-src.tar.*>" >&2; exit 1; }
+[[ -f "$distsrc" ]] || { echo "distsrc not found: $distsrc" >&2; exit 1; }
+
+dist_src="$(realpath "$distsrc")"
+case "$dist_src" in
+  "$repo_root"/*) ;;
+  *) echo "distsrc must be inside the repository" >&2; exit 1 ;;
+esac
+
+guix time-machine -C "$script_dir/channels.scm" \
+  -- shell --system="$guix_system" -m "$script_dir/manifest.scm" --container --pure -- \
+  env \
+    GUIX_BUILD_SYSTEM="$guix_system" \
+    GUIX_RUST_TARGET="$rust_target" \
+    GUIX_DIST_SRC="$dist_src" \
+    GUIX_ALLOW_COMMIT_MISMATCH="${GUIX_ALLOW_COMMIT_MISMATCH:-0}" \
+    RANDOMX_ARCH="${RANDOMX_ARCH:-}" \
+    RANDOMX_DARCH="${RANDOMX_DARCH:-default}" \
+    "$script_dir/libexec/build.sh"

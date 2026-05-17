@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+archive="${1:-}"
+if [[ -z "$archive" ]]; then
+  echo "usage: $0 <path-to-archive.tar.gz>" >&2
+  exit 1
+fi
+
+dir="$(cd -- "$(dirname -- "$archive")" && pwd)"
+base="$(basename -- "$archive")"
+sum_file="$dir/${base}.SHA256SUM"
+if [[ ! -f "$sum_file" ]]; then
+  echo "missing checksum file: $sum_file" >&2
+  exit 1
+fi
+
+( cd "$dir" && sha256sum --check "${base}.SHA256SUM" )

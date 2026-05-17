@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+export LC_ALL=C
+export TZ=UTC
+
+if ! git diff-index --quiet HEAD --; then
+  echo "working tree is dirty; commit changes before creating distsrc" >&2
+  exit 1
+fi
+
+out_dir="$repo_root/contrib/guix/out"
+work_dir="$repo_root/target/guix-distsrc"
+archive=""
+
+rm -rf "$work_dir"
+mkdir -p "$work_dir/src" "$out_dir"
+export CARGO_HOME="$work_dir/cargo-home"
+mkdir -p "$CARGO_HOME"
+
+version="$({ cargo metadata --locked --format-version=1 --no-deps | python3 -c 'import json,sys; print(next(p["version"] for p in json.load(sys.stdin)["packages"] if p["name"]=="cuprated"))'; })"
+commit="$(git rev-parse HEAD)"
+short_commit="$(git rev-parse --short=12 HEAD)"
+source_date_epoch="$(git log -1 --pretty=%ct)"
+archive="cuprate-${version}-${short_commit}-src.tar.gz"
+
+if [[ -n "${GUIX_ENVIRONMENT:-}" ]]; then
+  cert_file="$GUIX_ENVIRONMENT/etc/ssl/certs/ca-certificates.crt"
+  cert_dir="$GUIX_ENVIRONMENT/etc/ssl/certs"
+  [[ -f "$cert_file" ]] && export SSL_CERT_FILE="$cert_file" GIT_SSL_CAINFO="$cert_file" CURL_CA_BUNDLE="$cert_file"
+  [[ -d "$cert_dir" ]] && export SSL_CERT_DIR="$cert_dir"
+fi
+
+git archive --format=tar HEAD | tar -xf - -C "$work_dir/src"
+(
+  cd "$work_dir/src"
+  mkdir -p .cargo
+  cargo vendor --locked --versioned-dirs vendor > .cargo/config.toml
+  "$repo_root/contrib/guix/libexec/patch-randomx.sh" "$work_dir/src" >&2
+  cat > .cuprate-distsrc.json <<META
+{"package":"cuprated","version":"$version","git_commit":"$commit","source_date_epoch":$source_date_epoch}
+META
+)
+(
+  cd "$work_dir/src"
+  tar --sort=name --mtime="@${source_date_epoch}" --owner=0 --group=0 --numeric-owner --mode='a=rX,u+w' \
+    --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime -cf - . | gzip -n > "$out_dir/$archive"
+)
+(cd "$out_dir" && sha256sum "$archive" > "$archive.SHA256SUM")
+printf '%s\n' "$out_dir/$archive"

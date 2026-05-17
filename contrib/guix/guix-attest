@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+out_dir="${1:-$repo_root/contrib/guix/out}"
+if [[ ! -d "$out_dir" ]]; then
+  echo "output directory not found: $out_dir" >&2
+  exit 1
+fi
+
+identity_raw="${2:-$(whoami)}"
+identity="$(printf '%s' "$identity_raw" | tr -c 'A-Za-z0-9_.@+-' '_')"
+version="${3:-unknown}"
+sig_dir="$repo_root/contrib/guix/sigs/${version}/${identity}"
+mkdir -p "$sig_dir"
+
+cp "$out_dir"/SHA256SUMS "$sig_dir/SHA256SUMS"
+cp "$out_dir"/build-metadata.json "$sig_dir/build-metadata.json"
+cp "$out_dir"/guix-describe.json "$sig_dir/guix-describe.json"
+cp "$out_dir"/rustc-version.txt "$sig_dir/rustc-version.txt"
+cp "$out_dir"/cargo-version.txt "$sig_dir/cargo-version.txt"
+
+(
+  cd "$sig_dir"
+  cat SHA256SUMS build-metadata.json guix-describe.json rustc-version.txt cargo-version.txt > attestation.txt
+)
+
+if command -v gpg >/dev/null 2>&1; then
+  (cd "$sig_dir" && gpg --detach-sign --armor --output attestation.txt.asc attestation.txt)
+  echo "Wrote $sig_dir/attestation.txt.asc"
+else
+  echo "gpg not found; wrote unsigned attestation files in $sig_dir" >&2
+fi
