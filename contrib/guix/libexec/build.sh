@@ -85,7 +85,21 @@ if command -v ldd >/dev/null 2>&1; then
   ldd "$binary" > "$out_dir/ldd-${rust_target}.txt" 2>&1 || true
 fi
 
-guix describe --format=json > "$out_dir/guix-describe.json"
+# guix itself is not in manifest.scm (and shouldn't be — guix-shell's
+# isolation purpose is to NOT have host tools available), so `guix describe`
+# would fail inside the container. Fall back to a JSON stub that records
+# the profile path and points at channels.scm as the source of truth.
+if command -v guix >/dev/null 2>&1; then
+  guix describe --format=json > "$out_dir/guix-describe.json"
+else
+  cat > "$out_dir/guix-describe.json" <<JSON
+{
+  "note": "guix CLI is not in the build container's manifest; channels.scm is the deterministic input",
+  "profile": "${GUIX_ENVIRONMENT:-unknown}",
+  "build_system": "${GUIX_BUILD_SYSTEM:-x86_64-linux}"
+}
+JSON
+fi
 rustc --version --verbose > "$out_dir/rustc-version.txt"
 cargo --version --verbose > "$out_dir/cargo-version.txt"
 
