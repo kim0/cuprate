@@ -41,10 +41,10 @@ PY
   echo "patched $build_rs to honor RANDOMX_ARCH/RANDOMX_DARCH" >&2
 
   # ----- patch 2: RandomX/src/instructions_portable.cpp -----
-  # GCC 15+ rejects an unqualified `fesetround(mode)` when the only header pulled
-  # in is `<cfenv>` (which puts the function in `std::`). Adding the C header
-  # `<fenv.h>` puts `fesetround` back in the global namespace and unblocks the
-  # build without altering behaviour.
+  # GCC 15+ rejects the bare `fesetround(mode)` call: <cfenv> only brings the
+  # function into std::, and including <fenv.h> doesn't reliably backport it
+  # to the global namespace under libstdc++. Qualify the call as
+  # std::fesetround(mode) instead — works on every supported toolchain.
   ip_cpp="$crate_dir/RandomX/src/instructions_portable.cpp"
   if [[ -f "$ip_cpp" ]]; then
     python3 - "$ip_cpp" <<'PY'
@@ -52,17 +52,19 @@ from pathlib import Path
 import sys
 p = Path(sys.argv[1])
 s = p.read_text()
-needle = '#include <cfenv>'
-addition = '#include <fenv.h>'
-if addition in s:
-    print(f"{p} already includes <fenv.h>", file=sys.stderr)
-elif needle in s:
-    # Insert <fenv.h> right after <cfenv> so the global-namespace fesetround is visible.
-    s = s.replace(needle, f"{needle}\n{addition}", 1)
-    p.write_text(s)
-    print(f"injected <fenv.h> after <cfenv> in {p}", file=sys.stderr)
+if 'std::fesetround(' in s:
+    print(f"{p} already calls std::fesetround", file=sys.stderr)
+elif '\tfesetround(' in s or '\t\tfesetround(' in s or ' fesetround(' in s:
+    # The call is currently `fesetround(mode);` somewhere; qualify it.
+    import re
+    new_s = re.sub(r'(?<![:\w])fesetround\(', 'std::fesetround(', s, count=1)
+    if new_s == s:
+        print(f"warning: failed to qualify fesetround in {p}", file=sys.stderr)
+        sys.exit(3)
+    p.write_text(new_s)
+    print(f"qualified fesetround as std::fesetround in {p}", file=sys.stderr)
 else:
-    print(f"warning: {p} has no <cfenv> include to anchor patch", file=sys.stderr)
+    print(f"warning: {p} has no fesetround call to patch", file=sys.stderr)
     sys.exit(3)
 PY
   fi
